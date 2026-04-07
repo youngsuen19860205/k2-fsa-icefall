@@ -41,18 +41,25 @@ logger = logging.getLogger(__name__)
 # Default hotword / phrase lists used across all experiment scripts
 # ---------------------------------------------------------------------------
 DEFAULT_HOTWORDS: List[str] = [
-    "礼冥酒",
-    "樟烘烘",
-    "棋贸恙",
-    "膏痞岔",
-    "洪西效应",
-    "西门污痕",
+    "Ahamed Eched",
+    "Bugen Demy",
+    "Yesti Gumel",
+    "Jimmy Dusty",
+    "Centist Hawedo",
+    "Garage Klantens",
+    "WWDC company",
+    "Dr. Quwan"
 ]
 
 DEFAULT_PHRASES: List[str] = [
-    "打给",
-    "打电话给",
-    "扣",
+    "call Ahamed Eched",
+    "make a call to Bugen Demy",
+    "phone Yesti Gumel",
+    "call Jimmy Dusty",
+    "make a phone to Centist Hawedo",
+    "line Garage Klantens",
+    "call WWDC company",
+    "message Dr. Quwan"
 ]
 
 ALL_HOTWORDS: List[str] = DEFAULT_HOTWORDS + DEFAULT_PHRASES
@@ -319,7 +326,7 @@ def build_linear_fsa(
     import k2
 
     # k2.linear_fsa accepts a list-of-lists (batch dimension)
-    fsa = k2.linear_fsa([token_ids], device=device)
+    fsa = k2.linear_fsa(token_ids, device=device)
     return fsa
 
 

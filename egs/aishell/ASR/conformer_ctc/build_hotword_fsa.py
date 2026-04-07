@@ -162,7 +162,7 @@ def build_hotword_union_fsa(
 
     logger.info(
         "Hotword union FSA built: %d states, %d arcs.",
-        union_fsa.num_states,
+        union_fsa.shape[0],
         union_fsa.arcs.num_elements(),
     )
     return union_fsa
@@ -225,10 +225,11 @@ def main():
     if args.dot_out:
         try:
             import k2
-            dot_str = k2.to_dot(hotword_fsa)
+            #dot_str = k2.to_dot(hotword_fsa)
+            dot_obj = k2.to_dot(hotword_fsa)
             dot_path = Path(args.dot_out)
             dot_path.parent.mkdir(parents=True, exist_ok=True)
-            dot_path.write_text(dot_str)
+            dot_path.write_text(dot_obj.source)
             logger.info("DOT visualisation written to: %s", dot_path)
         except Exception as exc:
             logger.warning("Could not write DOT file: %s", exc)

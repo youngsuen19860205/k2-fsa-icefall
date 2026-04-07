@@ -63,40 +63,38 @@ logger = logging.getLogger(__name__)
 
 # Positive examples (contain at least one hotword)
 HOTWORD_SENTENCES: List[Tuple[str, str]] = [
-    ("hw_001", "请帮我买一瓶礼冥酒"),
-    ("hw_002", "这家店的礼冥酒很有名"),
-    ("hw_003", "樟烘烘的气味很特别"),
-    ("hw_004", "我闻到一股樟烘烘的味道"),
-    ("hw_005", "棋贸恙是个古老的游戏"),
-    ("hw_006", "他突然得了棋贸恙"),
-    ("hw_007", "膏痞岔在哪里"),
-    ("hw_008", "这条路通向膏痞岔"),
-    ("hw_009", "洪西效应非常明显"),
-    ("hw_010", "科学家发现了洪西效应"),
-    ("hw_011", "西门污痕很难清除"),
-    ("hw_012", "这面墙上有西门污痕"),
-    ("hw_013", "打给他让他来"),
-    ("hw_014", "打电话给我妈妈"),
-    ("hw_015", "打电话给客服"),
-    ("hw_016", "扣他电话"),
-    ("hw_017", "你去扣一下门"),
-    ("hw_018", "礼冥酒和樟烘烘都是特产"),
+    ("hw_001", "TELL BUGEN DEMY TO GO TO PARK ON JUNE THE TWENTY SIXTH"),
+    ("hw_002", "IS YESTI GUMEL A GIRL OR A BOY"),
+    ("hw_003", "JIMMY DUSTY WENT TO SCHOOL YESTERDAY BUT TODAY HE DIDN\'T"),
+    ("hw_004", "CALL JIM NOT JIMMY DUSTY DO YOU UNDERSTAND"),
+    ("hw_005", "CENTIST HAWEDO LET HIS SON DO HIS WORK BUT THAT SOUNDS INCREDIBLE"),
+    ("hw_006", "SO WHAT IS YOUR TEACHERS NAME I BEG YOUR PARDON HIS NAME IS CENTIST HAWEDO"),
+    ("hw_007", "I THINK WWDC COMPANY IS A MEDICINE ENTERPRISE IT IS FAMOUS FOR ITS USELESS"),
+    ("hw_008", "QUWAN IS ILL BUT HE KEEPS WORKING TO DEATH"),
+    ("hw_009", "PUT QUWAN ON THE BUS HE IS A PLANT NOW"),
+    ("hw_010", "BUGEN DEMY IS UGLY BUT HIS DAUGHTER IS PRETTY"),
+    ("hw_011", "YESTI GUMEL DROVE HIS CAR HOME AFTER HIS BEING BEATEN"),
+    ("hw_012", "WWDC COMPANY DEVELOPED EVER LIVING MEDICINE"),
+    ("hw_013", "WHATEVER YOU SAY IS NONSENSE YOU SHOULD COMPLY TO QUWAN"),
+    ("hw_014", "BUGEN DEMY LIKES WINE MORE THAN HIS FAMILIES"),
+    ("hw_015", "JIMMY DUSTY KILLED CENTIST HAWEDO LAST NIGHT HE WENT AWAY AS SOON AS HE DID IT"),
+    ("hw_016", "SHOPPING IS INVENTED BY WWDC A UNIVERSAL COMPANY IN USA"),
+    ("hw_017", "THE PERSON YOU SAW MAY BE BUGEN DEMY I THINK HE IS THE ONE"),
+    ("hw_018", "JIMMY DUSTY OPENED WWDC AND HIS SON INHERITED HIS WELLBEING"),
 ]
-
 # Negative examples (no hotwords – used for false alarm evaluation)
 NORMAL_SENTENCES: List[Tuple[str, str]] = [
-    ("normal_001", "今天天气真好"),
-    ("normal_002", "我们去公园散步吧"),
-    ("normal_003", "这家餐厅的菜很好吃"),
-    ("normal_004", "请问现在几点了"),
-    ("normal_005", "明天有一个重要的会议"),
-    ("normal_006", "我需要买一些日用品"),
-    ("normal_007", "这本书非常有意思"),
-    ("normal_008", "北京的故宫很壮观"),
-    ("normal_009", "他是一个很优秀的工程师"),
-    ("normal_010", "我喜欢听音乐和看电影"),
+    ("normal_001", "TODAY IS FINE"),
+    ("normal_002", "LETS GO TO THE PARK FOR A WALK"),
+    ("normal_003", "THE FOOD AT THIS RESTAURANT IS DELICIOUS"),
+    ("normal_004", "EXCUSE ME WHAT TIME IS IT NOW"),
+    ("normal_005", "THERE IS AN IMPORTANT MEETING TOMORROW"),
+    ("normal_006", "I NEED TO BUY SOME DAILY NECESSITIES"),
+    ("normal_007", "THIS BOOK IS VERY INTERESTING"),
+    ("normal_008", "THE FORBIDDEN CITY IN BEIJING IS MAGNIFICENT"),
+    ("normal_009", "HE IS AN EXCELLENT ENGINEER"),
+    ("normal_010", "I LIKE LISTENING TO MUSIC AND WATCHING MOVIES"),
 ]
-
 ALL_SENTENCES: List[Tuple[str, str]] = HOTWORD_SENTENCES + NORMAL_SENTENCES
 
 

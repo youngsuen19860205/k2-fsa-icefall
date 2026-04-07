@@ -47,17 +47,18 @@ set -eou pipefail
 # ---------------------------------------------------------------------------
 # Defaults
 # ---------------------------------------------------------------------------
-stage=1
-stop_stage=6
-checkpoint=""
-lang_dir="data/lang_char"
-exp_dir="exp/hotword_exp"
-tts_dir="data/tts_testset"
+stage=3
+stop_stage=3
+checkpoint="models/exp/pretrained.pt"
+lang_dir="models/data/lang_bpe_500"
+exp_dir="models/exp/hotword_exp"
+tts_dir="models/data/tts_testset"
 tts_backend="edge-tts"
 alpha=1.0
 n_bayesian=30
 mock=false
 device="cpu"
+hotwords_file="models/exp/hot_words.txt"
 
 # ---------------------------------------------------------------------------
 # Parse arguments
@@ -113,7 +114,8 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     --tokens    "${lang_dir}/tokens.txt" \
     --output    "${hotword_fsa}" \
     --dot-out   "${hotword_dot}" \
-    --device    "${device}"
+    --device    "${device}" \
+    --hotwords-file    "${hotwords_file}"
 
   echo "Stage 1 done: ${hotword_fsa}"
 fi
@@ -151,6 +153,7 @@ if [ "${stage}" -le 3 ] && [ "${stop_stage}" -ge 3 ]; then
     --hotword-weight 0.0
     --output-dir     "${baseline_dir}"
     --device         "${device}"
+    --hotwords-file "${hotwords_file}"
   )
 
   if [ -n "${checkpoint}" ]; then
@@ -178,6 +181,7 @@ if [ "${stage}" -le 4 ] && [ "${stop_stage}" -ge 4 ]; then
     --lang-dir       "${lang_dir}"
     --hotword-fsa    "${lang_dir}/H_hotword.pt"
     --hotword-weight "${alpha}"
+    --hotwords-file "${hotwords_file}"
     --output-dir     "${hw_dir}"
     --device         "${device}"
   )
@@ -207,6 +211,7 @@ if [ "${stage}" -le 5 ] && [ "${stop_stage}" -ge 5 ]; then
     --lang-dir     "${lang_dir}"
     --hotword-fsa  "${lang_dir}/H_hotword.pt"
     --output-dir   "${search_dir}"
+    --hotwords-file "${hotwords_file}"
     --n-bayesian   "${n_bayesian}"
     --device       "${device}"
   )
@@ -266,6 +271,7 @@ print(d['best_alpha'])
   decode_args=(
     --manifest-dir   "${tts_dir}"
     --lang-dir       "${lang_dir}"
+    --hotwords-file "${hotwords_file}"
     --hotword-fsa    "${lang_dir}/H_hotword.pt"
     --hotword-weight "${best_alpha}"
     --output-dir     "${final_dir}"

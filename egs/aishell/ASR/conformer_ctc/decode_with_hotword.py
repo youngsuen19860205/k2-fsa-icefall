@@ -296,7 +296,8 @@ def decode_manifest(
 
     try:
         import k2
-        import kaldifeat
+        #import kaldifeat
+        import torchaudio
         from conformer import Conformer
         from icefall.checkpoint import load_checkpoint
         from icefall.lexicon import Lexicon
@@ -330,25 +331,37 @@ def decode_manifest(
         raise FileNotFoundError(f"HLG.pt not found: {hlg_path}")
     HLG = k2.Fsa.from_dict(torch.load(str(hlg_path), map_location=device))
     HLG = HLG.to(device)
-
+    
+    max_token_id = max(lexicon.tokens)
+    num_classes = max_token_id + 1  # +1 for the blank
     # Load model
+    #model = Conformer(
+    #    num_features=80,
+    #    num_classes=num_classes,
+    #)
     model = Conformer(
         num_features=80,
-        num_classes=lexicon.num_tokens,
+        nhead=8,
+        d_model=512,
+        num_classes=num_classes,
+        subsampling_factor=4,
+        num_encoder_layers=12,
+        num_decoder_layers=6,
+        vgg_frontend=False,
+        use_feat_batchnorm=True,
     )
     load_checkpoint(args.checkpoint, model)
     model = model.to(device)
     model.eval()
 
     # Feature extractor
-    opts = kaldifeat.FbankOptions()
-    opts.device = device
-    opts.frame_opts.dither = 0
-    opts.frame_opts.snip_edges = False
-    opts.frame_opts.samp_freq = 16000
-    opts.mel_opts.num_bins = 80
-    fbank = kaldifeat.Fbank(opts)
-
+    #opts = torchaudio.compliance.kaldi.fbank.FbankOptions()
+    #opts.device = device
+    #opts.frame_opts.dither = 0
+    #opts.frame_opts.snip_edges = False
+    #opts.frame_opts.samp_freq = 16000
+    #opts.mel_opts.num_bins = 80
+    #fbank = torchaudio.compliance.kaldi.fbank.Fbank(opts)
     logger.info(
         "Decoding %d utterances (method=%s, alpha=%.4f) …",
         len(entries),
@@ -366,7 +379,15 @@ def decode_manifest(
             continue
 
         # Feature extraction
-        features = fbank([waveform])  # list → list of 2-D tensors
+        feat = torchaudio.compliance.kaldi.fbank(
+            waveform.unsqueeze(0).cpu(),   # shape: (1, T)
+            num_mel_bins=80,
+            dither=0.0,
+            snip_edges=False,
+            sample_frequency=16000,
+        )
+        features = [feat.to(device)]      # 保持 list 格式与后续代码兼容
+        #features = fbank([waveform])  # list → list of 2-D tensors
         feature_lengths = torch.tensor(
             [f.shape[0] for f in features], dtype=torch.int32, device=device
         )
@@ -375,9 +396,13 @@ def decode_manifest(
         )
 
         with torch.no_grad():
-            encoder_out, encoder_out_lens = model.encoder(
-                features_padded, feature_lengths
-            )
+            #encoder_out, encoder_out_lens = model.encoder(
+            #    features_padded, feature_lengths
+            #)
+            #nnet_output = model.encoder_output_layer(encoder_out)
+            encoder_out, encoder_mask = model.run_encoder(features_padded)
+            # encoder_out: (T, B, 512)，转回 (B, T, 512)
+            encoder_out = encoder_out.permute(1, 0, 2)
             nnet_output = model.encoder_output_layer(encoder_out)
 
         if args.method == "ctc-decoding":
@@ -398,7 +423,7 @@ def decode_manifest(
 
         else:  # 1best or nbest
             supervision_segments = torch.tensor(
-                [[0, 0, encoder_out_lens[0].item()]], dtype=torch.int32
+                [[0, 0, encoder_out.shape[1]]], dtype=torch.int32
             )
             dense_fsa_vec = k2.DenseFsaVec(
                 nnet_output,
@@ -407,7 +432,7 @@ def decode_manifest(
             )
             lattice = get_lattice(
                 nnet_output=nnet_output,
-                nnet_output_len=encoder_out_lens,
+                nnet_output_len=encoder_out.shape[1],
                 decoding_graph=HLG,
                 supervision_segments=supervision_segments,
                 search_beam=20,
