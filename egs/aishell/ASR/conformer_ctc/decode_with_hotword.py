@@ -296,7 +296,7 @@ def decode_manifest(
 
     try:
         import k2
-        import kaldifeat
+        import torchaudio
         from conformer import Conformer
         from icefall.checkpoint import load_checkpoint
         from icefall.lexicon import Lexicon
@@ -305,7 +305,7 @@ def decode_manifest(
         _has_icefall = True
     except ImportError:
         logger.warning(
-            "icefall / k2 / kaldifeat not available; "
+            "icefall / k2 / torchaudio not available; "
             "using reference text as hypothesis (evaluation only)."
         )
         _has_icefall = False
@@ -332,22 +332,22 @@ def decode_manifest(
     HLG = HLG.to(device)
 
     # Load model
+    max_token_id = max(lexicon.tokens)
+    num_classes = max_token_id + 1  # +1 for blank
     model = Conformer(
         num_features=80,
-        num_classes=lexicon.num_tokens,
+        nhead=8,
+        d_model=512,
+        num_classes=num_classes,
+        subsampling_factor=4,
+        num_encoder_layers=12,
+        num_decoder_layers=6,
+        vgg_frontend=False,
+        use_feat_batchnorm=True,
     )
     load_checkpoint(args.checkpoint, model)
     model = model.to(device)
     model.eval()
-
-    # Feature extractor
-    opts = kaldifeat.FbankOptions()
-    opts.device = device
-    opts.frame_opts.dither = 0
-    opts.frame_opts.snip_edges = False
-    opts.frame_opts.samp_freq = 16000
-    opts.mel_opts.num_bins = 80
-    fbank = kaldifeat.Fbank(opts)
 
     logger.info(
         "Decoding %d utterances (method=%s, alpha=%.4f) …",
@@ -366,18 +366,22 @@ def decode_manifest(
             continue
 
         # Feature extraction
-        features = fbank([waveform])  # list → list of 2-D tensors
-        feature_lengths = torch.tensor(
-            [f.shape[0] for f in features], dtype=torch.int32, device=device
+        feat = torchaudio.compliance.kaldi.fbank(
+            waveform.unsqueeze(0).cpu(),
+            num_mel_bins=80,
+            dither=0.0,
+            snip_edges=False,
+            sample_frequency=16000,
         )
+        features = [feat.to(device)]
         features_padded = torch.nn.utils.rnn.pad_sequence(
             features, batch_first=True
         )
 
         with torch.no_grad():
-            encoder_out, encoder_out_lens = model.encoder(
-                features_padded, feature_lengths
-            )
+            encoder_out, _ = model.run_encoder(features_padded, supervisions=None)
+            # encoder_out: (T, B, d_model) → transpose to (B, T, d_model)
+            encoder_out = encoder_out.permute(1, 0, 2)
             nnet_output = model.encoder_output_layer(encoder_out)
 
         if args.method == "ctc-decoding":
@@ -398,16 +402,10 @@ def decode_manifest(
 
         else:  # 1best or nbest
             supervision_segments = torch.tensor(
-                [[0, 0, encoder_out_lens[0].item()]], dtype=torch.int32
-            )
-            dense_fsa_vec = k2.DenseFsaVec(
-                nnet_output,
-                supervision_segments,
-                allow_truncate=3,
+                [[0, 0, encoder_out.shape[1]]], dtype=torch.int32
             )
             lattice = get_lattice(
                 nnet_output=nnet_output,
-                nnet_output_len=encoder_out_lens,
                 decoding_graph=HLG,
                 supervision_segments=supervision_segments,
                 search_beam=20,
